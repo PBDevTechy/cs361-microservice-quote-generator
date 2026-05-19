@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 
-app = Flask(_name_)
+app = Flask(__name__)
 
 # home page
 @app.route('/')
@@ -13,7 +13,7 @@ def generate_quote():
     return "Quote route working."
 
 # run
-if __name__ == 'main';
+if __name__ == 'main':
     app.run(debug=True)
 
 # if project info exists
@@ -29,7 +29,7 @@ def project_info_ok(project_data):
     
     for field in required_fields:
         
-        if field is not in project_data or not project_data[field]:
+        if field not in project_data or not project_data[field]:
             return  False
         
     return True
@@ -92,5 +92,54 @@ def estimate_price(project_type, project_size):
         elif project_size == "large":
             return "$50,000+"
 
-
     return "Custom quote needed"
+
+# main quote route
+@app.route('/generate-quote', methods=['POST'])
+def estimate_project_cost():
+
+    # get project data from request
+    project_data = request.get_json()
+
+
+    # check if info missing
+    if not project_info_ok(project_data):
+
+        return jsonify({
+            "status": "error",
+            "message": "Project information missing."
+        }), 400
+
+
+    # get values
+    client_name = project_data["client_name"]
+    project_type = project_data["project_type"]
+    project_size = project_data["project_size"]
+    service_category = project_data["service_category"]
+    estimated_budget = project_data["estimated_budget"]
+
+
+    # calculate estimate
+    estimated_price = estimate_price(project_type, project_size)
+
+
+    # create response
+    quote_response = {
+
+        "client_name": client_name,
+        "project_type": project_type,
+        "project_size": project_size,
+        "service_category": service_category,
+        "estimated_budget": estimated_budget,
+        "estimated_price": estimated_price,
+        "status": "success",
+        "notes": "Final quote can change depend on project details."
+
+    }
+
+    return jsonify(quote_response)
+
+
+# run app
+if __name__ == '__main__':
+    app.run(debug=True)
